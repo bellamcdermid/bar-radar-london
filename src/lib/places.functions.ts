@@ -98,3 +98,47 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         lng: p.location!.longitude,
       }));
   });
+
+export const fetchPlaceDetails = createServerFn({ method: "POST" })
+  .inputValidator((data: { placeId: string }) => {
+    if (!data.placeId || typeof data.placeId !== "string") {
+      throw new Error("placeId required");
+    }
+    return { placeId: data.placeId.slice(0, 200) };
+  })
+  .handler(async ({ data }): Promise<NearbyPub> => {
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connectionKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!lovableKey || !connectionKey) {
+      throw new Error("Google Maps connector not configured");
+    }
+    const res = await fetch(
+      `${GATEWAY}/places/v1/places/${encodeURIComponent(data.placeId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connectionKey,
+          "X-Goog-FieldMask": "id,displayName,formattedAddress,location",
+        },
+      },
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("Place details error", res.status, body);
+      throw new Error(`Place details failed: ${res.status}`);
+    }
+    const p = (await res.json()) as {
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      location?: { latitude: number; longitude: number };
+    };
+    if (!p.location) throw new Error("Place has no location");
+    return {
+      place_id: p.id,
+      name: p.displayName?.text ?? "Unnamed",
+      address: p.formattedAddress ?? "",
+      lat: p.location.latitude,
+      lng: p.location.longitude,
+    };
+  });

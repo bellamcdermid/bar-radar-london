@@ -33,8 +33,17 @@ export const Route = createFileRoute("/pubs/$placeId")({
       .select("*")
       .eq("place_id", params.placeId)
       .maybeSingle();
-    if (!pub) throw notFound();
-    return { pub: pub as Pub };
+    if (pub) return { pub: pub as Pub };
+    // Fallback: pub not yet cached — fetch lightweight details from Google.
+    try {
+      const { fetchPlaceDetails } = await import("@/lib/places.functions");
+      const details = await fetchPlaceDetails({ data: { placeId: params.placeId } });
+      // Cache for next time (RLS now allows anon).
+      await supabase.from("pubs").upsert(details, { onConflict: "place_id" });
+      return { pub: details as Pub };
+    } catch {
+      throw notFound();
+    }
   },
   head: ({ loaderData }) => ({
     meta: [
