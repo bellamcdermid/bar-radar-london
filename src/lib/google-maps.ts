@@ -1,6 +1,6 @@
-let mapsPromise: Promise<typeof google> | null = null;
+let mapsPromise: Promise<any> | null = null;
 
-export function loadGoogleMaps(): Promise<typeof google> {
+export function loadGoogleMaps(): Promise<any> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Maps only available in browser"));
   }
