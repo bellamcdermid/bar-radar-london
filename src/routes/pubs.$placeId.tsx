@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { format, getDay, parseISO } from "date-fns";
-import { ArrowLeft, Flame, MapPin, Trash2 } from "lucide-react";
+import { ArrowLeft, Flame, Lock, MapPin, Trash2 } from "lucide-react";
+import { FREE_VIEW_LIMIT, isOverFreeLimit, recordView } from "@/lib/access-gate";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -78,8 +79,17 @@ function PubDetail() {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [dayFilter, setDayFilter] = useState<number | "all">("all");
   const [userId, setUserId] = useState<string | null>(null);
+  const [hasRated, setHasRated] = useState(false);
+  const [gated, setGated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   async function loadRatings() {
+    // Ratings table is gated by RLS to authenticated users; skip for guests.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setRatings([]);
+      return;
+    }
     const { data } = await supabase
       .from("ratings")
       .select("*")
@@ -89,12 +99,45 @@ function PubDetail() {
   }
 
   useEffect(() => {
-    loadRatings();
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setUserId(s?.user?.id ?? null));
-    return () => sub.subscription.unsubscribe();
+    let cancelled = false;
+    async function init() {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id ?? null;
+      if (cancelled) return;
+      setUserId(uid);
+      // Check if this user has ever rated anything (unlocks unlimited browsing).
+      let rated = false;
+      if (uid) {
+        const { count } = await supabase
+          .from("ratings")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid);
+        rated = (count ?? 0) > 0;
+      }
+      if (cancelled) return;
+      setHasRated(rated);
+      // Gate: anyone over the free-view limit who has not yet rated.
+      const blocked = !rated && isOverFreeLimit(pub.place_id);
+      setGated(blocked);
+      if (!blocked) recordView(pub.place_id);
+      setAuthChecked(true);
+      if (!blocked) loadRatings();
+    }
+    init();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setUserId(s?.user?.id ?? null);
+      init();
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pub.place_id]);
+
+  if (authChecked && gated) {
+    return <AccessGate pub={pub} signedIn={!!userId} />;
+  }
 
   const filtered = dayFilter === "all" ? ratings : ratings.filter((r) => r.day_of_week === dayFilter);
   const avg = filtered.length ? filtered.reduce((s, r) => s + r.score, 0) / filtered.length : null;
@@ -130,7 +173,14 @@ function PubDetail() {
                 </p>
               )}
             </div>
-            <ScorePill avg={avg} count={filtered.length} />
+            {userId ? (
+              <ScorePill avg={avg} count={filtered.length} />
+            ) : (
+              <div className="rounded-2xl px-5 py-3 bg-muted text-muted-foreground shadow-[var(--shadow-soft)] flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm">Sign in to see scores</span>
+              </div>
+            )}
           </div>
 
           {/* Day filter chips */}
@@ -157,7 +207,8 @@ function PubDetail() {
         {/* Rate form */}
         <RateForm pub={pub} userId={userId} onAdded={loadRatings} />
 
-        {/* Ratings list */}
+        {/* Ratings list — signed-in only */}
+        {userId ? (
         <section className="mt-8">
           <h2 className="font-display text-2xl font-semibold mb-4">
             {filtered.length} {filtered.length === 1 ? "rating" : "ratings"}
@@ -175,6 +226,15 @@ function PubDetail() {
             </ul>
           )}
         </section>
+        ) : (
+          <section className="mt-8 text-center bg-card rounded-3xl border border-dashed border-border p-10">
+            <Lock className="h-6 w-6 mx-auto text-[var(--burgundy)] opacity-70" />
+            <h2 className="font-display text-2xl font-semibold mt-3 text-[var(--burgundy)]">Ratings are members only</h2>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+              Sign in to see scores, comments, and how this pub compares by day of the week.
+            </p>
+          </section>
+        )}
       </main>
     </div>
   );
@@ -371,5 +431,52 @@ function RatingCard({ rating, mine, onDeleted }: { rating: Rating; mine: boolean
         )}
       </div>
     </li>
+  );
+}
+
+function AccessGate({ pub, signedIn }: { pub: Pub; signedIn: boolean }) {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main className="max-w-2xl mx-auto px-4 py-16">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to map
+        </Link>
+        <div className="bg-[var(--gradient-sunset)] rounded-3xl p-10 text-center shadow-[var(--shadow-warm)]">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--burgundy)] text-cream mb-4">
+            <Lock className="h-6 w-6" />
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-[var(--burgundy)] leading-tight">
+            You've peeked at {FREE_VIEW_LIMIT} pubs
+          </h1>
+          <p className="mt-3 text-[var(--burgundy)]/80 max-w-md mx-auto">
+            {signedIn
+              ? `Contribute one honest rating and you'll unlock unlimited browsing — starting with ${pub.name}.`
+              : `Sign in and post your first rating to keep exploring. Your turn to tell us about ${pub.name}.`}
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {signedIn ? (
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
+              >
+                I've rated — refresh
+              </Button>
+            ) : (
+              <Button
+                onClick={() => navigate({ to: "/auth" })}
+                className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
+              >
+                Sign in to continue
+              </Button>
+            )}
+            <Button asChild variant="outline" className="rounded-full px-6 h-11 border-[var(--burgundy)]/30 text-[var(--burgundy)]">
+              <Link to="/">Back to map</Link>
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
