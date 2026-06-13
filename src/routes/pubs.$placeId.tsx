@@ -433,3 +433,50 @@ function RatingCard({ rating, mine, onDeleted }: { rating: Rating; mine: boolean
     </li>
   );
 }
+
+function AccessGate({ pub, signedIn }: { pub: Pub; signedIn: boolean }) {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main className="max-w-2xl mx-auto px-4 py-16">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to map
+        </Link>
+        <div className="bg-[var(--gradient-sunset)] rounded-3xl p-10 text-center shadow-[var(--shadow-warm)]">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--burgundy)] text-cream mb-4">
+            <Lock className="h-6 w-6" />
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-[var(--burgundy)] leading-tight">
+            You've peeked at {FREE_VIEW_LIMIT} pubs
+          </h1>
+          <p className="mt-3 text-[var(--burgundy)]/80 max-w-md mx-auto">
+            {signedIn
+              ? `Contribute one honest rating and you'll unlock unlimited browsing — starting with ${pub.name}.`
+              : `Sign in and post your first rating to keep exploring. Your turn to tell us about ${pub.name}.`}
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {signedIn ? (
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
+              >
+                I've rated — refresh
+              </Button>
+            ) : (
+              <Button
+                onClick={() => navigate({ to: "/auth" })}
+                className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
+              >
+                Sign in to continue
+              </Button>
+            )}
+            <Button asChild variant="outline" className="rounded-full px-6 h-11 border-[var(--burgundy)]/30 text-[var(--burgundy)]">
+              <Link to="/">Back to map</Link>
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
