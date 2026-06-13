@@ -1,0 +1,100 @@
+import { createServerFn } from "@tanstack/react-start";
+
+export type NearbyPub = {
+  place_id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+};
+
+const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
+
+export const searchNearbyPubs = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { lat: number; lng: number; radius?: number; query?: string }) => {
+      if (typeof data.lat !== "number" || typeof data.lng !== "number") {
+        throw new Error("lat and lng required");
+      }
+      return {
+        lat: data.lat,
+        lng: data.lng,
+        radius: Math.min(Math.max(data.radius ?? 1500, 200), 5000),
+        query: (data.query ?? "").slice(0, 100),
+      };
+    },
+  )
+  .handler(async ({ data }): Promise<NearbyPub[]> => {
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connectionKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!lovableKey || !connectionKey) {
+      throw new Error("Google Maps connector not configured");
+    }
+
+    const headers = {
+      Authorization: `Bearer ${lovableKey}`,
+      "X-Connection-Api-Key": connectionKey,
+      "Content-Type": "application/json",
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.location",
+    };
+
+    let res: Response;
+    if (data.query) {
+      res = await fetch(`${GATEWAY}/places/v1/places:searchText`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          textQuery: `${data.query} pub bar London`,
+          includedType: "bar",
+          maxResultCount: 20,
+          locationBias: {
+            circle: {
+              center: { latitude: data.lat, longitude: data.lng },
+              radius: data.radius,
+            },
+          },
+        }),
+      });
+    } else {
+      res = await fetch(`${GATEWAY}/places/v1/places:searchNearby`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          includedTypes: ["bar", "pub"],
+          maxResultCount: 20,
+          locationRestriction: {
+            circle: {
+              center: { latitude: data.lat, longitude: data.lng },
+              radius: data.radius,
+            },
+          },
+        }),
+      });
+    }
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("Places API error", res.status, body);
+      throw new Error(`Places search failed: ${res.status}`);
+    }
+
+    const json = (await res.json()) as {
+      places?: Array<{
+        id: string;
+        displayName?: { text?: string };
+        formattedAddress?: string;
+        location?: { latitude: number; longitude: number };
+      }>;
+    };
+
+    return (json.places ?? [])
+      .filter((p) => p.id && p.location)
+      .map((p) => ({
+        place_id: p.id,
+        name: p.displayName?.text ?? "Unnamed",
+        address: p.formattedAddress ?? "",
+        lat: p.location!.latitude,
+        lng: p.location!.longitude,
+      }));
+  });
