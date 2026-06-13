@@ -62,7 +62,8 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         method: "POST",
         headers,
         body: JSON.stringify({
-          includedTypes: ["bar", "pub"],
+          includedTypes: ["bar", "pub", "night_club"],
+          excludedTypes: ["restaurant", "hotel", "lodging"],
           maxResultCount: 20,
           locationRestriction: {
             circle: {
