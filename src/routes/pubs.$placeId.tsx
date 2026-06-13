@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { format, getDay, parseISO } from "date-fns";
-import { ArrowLeft, Flame, MapPin, Trash2 } from "lucide-react";
+import { ArrowLeft, Flame, Lock, MapPin, Trash2 } from "lucide-react";
+import { FREE_VIEW_LIMIT, isOverFreeLimit, recordView } from "@/lib/access-gate";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -78,8 +79,17 @@ function PubDetail() {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [dayFilter, setDayFilter] = useState<number | "all">("all");
   const [userId, setUserId] = useState<string | null>(null);
+  const [hasRated, setHasRated] = useState(false);
+  const [gated, setGated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   async function loadRatings() {
+    // Ratings table is gated by RLS to authenticated users; skip for guests.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setRatings([]);
+      return;
+    }
     const { data } = await supabase
       .from("ratings")
       .select("*")
@@ -89,12 +99,45 @@ function PubDetail() {
   }
 
   useEffect(() => {
-    loadRatings();
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setUserId(s?.user?.id ?? null));
-    return () => sub.subscription.unsubscribe();
+    let cancelled = false;
+    async function init() {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id ?? null;
+      if (cancelled) return;
+      setUserId(uid);
+      // Check if this user has ever rated anything (unlocks unlimited browsing).
+      let rated = false;
+      if (uid) {
+        const { count } = await supabase
+          .from("ratings")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid);
+        rated = (count ?? 0) > 0;
+      }
+      if (cancelled) return;
+      setHasRated(rated);
+      // Gate: anyone over the free-view limit who has not yet rated.
+      const blocked = !rated && isOverFreeLimit(pub.place_id);
+      setGated(blocked);
+      if (!blocked) recordView(pub.place_id);
+      setAuthChecked(true);
+      if (!blocked) loadRatings();
+    }
+    init();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setUserId(s?.user?.id ?? null);
+      init();
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pub.place_id]);
+
+  if (authChecked && gated) {
+    return <AccessGate pub={pub} signedIn={!!userId} />;
+  }
 
   const filtered = dayFilter === "all" ? ratings : ratings.filter((r) => r.day_of_week === dayFilter);
   const avg = filtered.length ? filtered.reduce((s, r) => s + r.score, 0) / filtered.length : null;
