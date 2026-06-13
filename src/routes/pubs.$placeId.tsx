@@ -173,7 +173,14 @@ function PubDetail() {
                 </p>
               )}
             </div>
-            <ScorePill avg={avg} count={filtered.length} />
+            {userId ? (
+              <ScorePill avg={avg} count={filtered.length} />
+            ) : (
+              <div className="rounded-2xl px-5 py-3 bg-muted text-muted-foreground shadow-[var(--shadow-soft)] flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm">Sign in to see scores</span>
+              </div>
+            )}
           </div>
 
           {/* Day filter chips */}
@@ -200,7 +207,8 @@ function PubDetail() {
         {/* Rate form */}
         <RateForm pub={pub} userId={userId} onAdded={loadRatings} />
 
-        {/* Ratings list */}
+        {/* Ratings list — signed-in only */}
+        {userId ? (
         <section className="mt-8">
           <h2 className="font-display text-2xl font-semibold mb-4">
             {filtered.length} {filtered.length === 1 ? "rating" : "ratings"}
@@ -218,6 +226,15 @@ function PubDetail() {
             </ul>
           )}
         </section>
+        ) : (
+          <section className="mt-8 text-center bg-card rounded-3xl border border-dashed border-border p-10">
+            <Lock className="h-6 w-6 mx-auto text-[var(--burgundy)] opacity-70" />
+            <h2 className="font-display text-2xl font-semibold mt-3 text-[var(--burgundy)]">Ratings are members only</h2>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+              Sign in to see scores, comments, and how this pub compares by day of the week.
+            </p>
+          </section>
+        )}
       </main>
     </div>
   );
