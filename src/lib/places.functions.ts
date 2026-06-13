@@ -47,6 +47,7 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         body: JSON.stringify({
           textQuery: `${data.query} pub bar London`,
           includedType: "bar",
+          excludedTypes: ["restaurant", "hotel", "lodging"],
           maxResultCount: 20,
           locationBias: {
             circle: {
@@ -61,7 +62,8 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         method: "POST",
         headers,
         body: JSON.stringify({
-          includedTypes: ["bar", "pub"],
+          includedTypes: ["bar", "pub", "night_club"],
+          excludedTypes: ["restaurant", "hotel", "lodging"],
           maxResultCount: 20,
           locationRestriction: {
             circle: {
