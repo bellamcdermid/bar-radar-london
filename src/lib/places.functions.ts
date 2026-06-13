@@ -47,7 +47,7 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         body: JSON.stringify({
           textQuery: `${data.query} pub bar London`,
           includedType: "bar",
-          excludedTypes: ["restaurant", "hotel", "lodging"],
+          excludedTypes: ["restaurant", "hotel", "lodging", "private_members_club"],
           maxResultCount: 20,
           locationBias: {
             circle: {
