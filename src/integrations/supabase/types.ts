@@ -14,7 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pubs: {
+        Row: {
+          address: string | null
+          created_at: string
+          lat: number
+          lng: number
+          name: string
+          place_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          lat: number
+          lng: number
+          name: string
+          place_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          lat?: number
+          lng?: number
+          name?: string
+          place_id?: string
+        }
+        Relationships: []
+      }
+      ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          day_of_week: number
+          display_name: string | null
+          id: string
+          place_id: string
+          score: number
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          day_of_week: number
+          display_name?: string | null
+          id?: string
+          place_id: string
+          score: number
+          user_id: string
+          visited_at: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          day_of_week?: number
+          display_name?: string | null
+          id?: string
+          place_id?: string
+          score?: number
+          user_id?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "pubs"
+            referencedColumns: ["place_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
