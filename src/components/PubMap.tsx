@@ -55,8 +55,11 @@ export function PubMap() {
         setLoading(false);
         return;
       }
-      // Cache pubs
-      await supabase.from("pubs").upsert(pubs, { onConflict: "place_id" });
+      // Cache pubs (signed-in users only — RLS restricts writes)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("pubs").upsert(pubs, { onConflict: "place_id" });
+      }
       // Get ratings averages
       const { data: ratings } = await supabase
         .from("ratings")

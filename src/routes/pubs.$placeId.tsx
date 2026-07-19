@@ -39,8 +39,11 @@ export const Route = createFileRoute("/pubs/$placeId")({
     try {
       const { fetchPlaceDetails } = await import("@/lib/places.functions");
       const details = await fetchPlaceDetails({ data: { placeId: params.placeId } });
-      // Cache for next time (RLS now allows anon).
-      await supabase.from("pubs").upsert(details, { onConflict: "place_id" });
+      // Cache for next time — only signed-in users may write to the pub cache.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("pubs").upsert(details, { onConflict: "place_id" });
+      }
       return { pub: details as Pub };
     } catch {
       throw notFound();
