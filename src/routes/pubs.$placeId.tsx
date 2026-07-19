@@ -176,14 +176,24 @@ function PubDetail() {
                 </p>
               )}
             </div>
-            {userId ? (
-              <ScorePill avg={avg} count={filtered.length} />
-            ) : (
-              <div className="rounded-2xl px-5 py-3 bg-muted text-muted-foreground shadow-[var(--shadow-soft)] flex items-center gap-2">
-                <Lock className="h-4 w-4" />
-                <span className="text-sm">Sign in to see scores</span>
-              </div>
-            )}
+            <div className="flex flex-col items-stretch sm:items-end gap-2">
+              {userId ? (
+                <ScorePill avg={avg} count={filtered.length} />
+              ) : (
+                <div className="rounded-2xl px-5 py-3 bg-muted text-muted-foreground shadow-[var(--shadow-soft)] flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  <span className="text-sm">Sign in to see scores</span>
+                </div>
+              )}
+              <Button
+                asChild
+                className="h-11 px-5 rounded-full bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream font-medium"
+              >
+                <Link to="/pubs/$placeId/rate" params={{ placeId: pub.place_id }}>
+                  <Flame className="h-4 w-4 mr-1.5" /> Rate this pub
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Day filter chips */}
@@ -459,19 +469,21 @@ function AccessGate({ pub, signedIn }: { pub: Pub; signedIn: boolean }) {
               : `Sign in and post your first rating to keep exploring. Your turn to tell us about ${pub.name}.`}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            {signedIn ? (
-              <Button
-                onClick={() => window.location.reload()}
-                className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
-              >
-                I've rated — refresh
-              </Button>
-            ) : (
+            <Button
+              asChild
+              className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
+            >
+              <Link to="/pubs/$placeId/rate" params={{ placeId: pub.place_id }}>
+                <Flame className="h-4 w-4 mr-1.5" /> Rate {pub.name}
+              </Link>
+            </Button>
+            {!signedIn && (
               <Button
                 onClick={() => navigate({ to: "/auth" })}
-                className="bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-cream rounded-full px-6 h-11"
+                variant="outline"
+                className="rounded-full px-6 h-11 border-[var(--burgundy)]/30 text-[var(--burgundy)]"
               >
-                Sign in to continue
+                Sign in
               </Button>
             )}
             <Button asChild variant="outline" className="rounded-full px-6 h-11 border-[var(--burgundy)]/30 text-[var(--burgundy)]">
