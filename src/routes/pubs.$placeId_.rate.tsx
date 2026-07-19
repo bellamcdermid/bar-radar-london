@@ -13,7 +13,16 @@ import { ArrowLeft, Flame, MapPin } from "lucide-react";
 
 type Pub = { place_id: string; name: string; address: string | null; lat: number; lng: number };
 
-export const Route = createFileRoute("/pubs/$placeId/rate")({
+const SCORE_LABELS: Record<number, string> = {
+  5: "Average and below",
+  6: "Promising",
+  7: "Some cuties",
+  8: "Getting hotter",
+  9: "Hot!",
+  10: "So hot would buy them a drink",
+};
+
+export const Route = createFileRoute("/pubs/$placeId_/rate")({
   loader: async ({ params }) => {
     const { data: pub } = await supabase
       .from("pubs")
@@ -171,17 +180,20 @@ function RatePage() {
                 </div>
                 <input
                   type="range"
-                  min={1}
+                  min={5}
                   max={10}
                   value={score}
                   onChange={(e) => setScore(Number(e.target.value))}
                   className="w-full mt-2 accent-[var(--coral)]"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>Bleak</span>
-                  <span>Promising</span>
-                  <span>Smoking</span>
+                  {[5, 6, 7, 8, 9, 10].map((n) => (
+                    <span key={n}>{n}</span>
+                  ))}
                 </div>
+                <p className="mt-2 text-center font-display text-lg text-[var(--burgundy)]">
+                  {SCORE_LABELS[score]}
+                </p>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4 mt-5">

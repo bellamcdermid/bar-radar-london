@@ -13,7 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PubsPlaceIdRouteImport } from './routes/pubs.$placeId'
-import { Route as PubsPlaceIdRateRouteImport } from './routes/pubs.$placeId.rate'
+import { Route as PubsPlaceIdRateRouteImport } from './routes/pubs.$placeId_.rate'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -36,23 +36,23 @@ const PubsPlaceIdRoute = PubsPlaceIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PubsPlaceIdRateRoute = PubsPlaceIdRateRouteImport.update({
-  id: '/rate',
-  path: '/rate',
-  getParentRoute: () => PubsPlaceIdRoute,
+  id: '/pubs/$placeId_/rate',
+  path: '/pubs/$placeId/rate',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/pubs/$placeId': typeof PubsPlaceIdRouteWithChildren
+  '/pubs/$placeId': typeof PubsPlaceIdRoute
   '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/pubs/$placeId': typeof PubsPlaceIdRouteWithChildren
+  '/pubs/$placeId': typeof PubsPlaceIdRoute
   '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRoutesById {
@@ -60,7 +60,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/pubs/$placeId': typeof PubsPlaceIdRouteWithChildren
+  '/pubs/$placeId': typeof PubsPlaceIdRoute
   '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRouteTypes {
@@ -86,7 +86,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  PubsPlaceIdRoute: typeof PubsPlaceIdRouteWithChildren
+  PubsPlaceIdRoute: typeof PubsPlaceIdRoute
+  PubsPlaceIdRateRoute: typeof PubsPlaceIdRateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -120,32 +121,21 @@ declare module '@tanstack/react-router' {
       parentRoute: typeof rootRouteImport
     }
     '/pubs/$placeId/rate': {
-      id: '/pubs/$placeId/rate'
-      path: '/rate'
+      id: '/pubs/$placeId_/rate'
+      path: '/pubs/$placeId/rate'
       fullPath: '/pubs/$placeId/rate'
       preLoaderRoute: typeof PubsPlaceIdRateRouteImport
-      parentRoute: typeof PubsPlaceIdRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface PubsPlaceIdRouteChildren {
-  PubsPlaceIdRateRoute: typeof PubsPlaceIdRateRoute
-}
-
-const PubsPlaceIdRouteChildren: PubsPlaceIdRouteChildren = {
-  PubsPlaceIdRateRoute: PubsPlaceIdRateRoute,
-}
-
-const PubsPlaceIdRouteWithChildren = PubsPlaceIdRoute._addFileChildren(
-  PubsPlaceIdRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  PubsPlaceIdRoute: PubsPlaceIdRouteWithChildren,
+  PubsPlaceIdRoute: PubsPlaceIdRoute,
+  PubsPlaceIdRateRoute: PubsPlaceIdRateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
