@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PubsPlaceIdRouteImport } from './routes/pubs.$placeId'
+import { Route as PubsPlaceIdRateRouteImport } from './routes/pubs.$placeId.rate'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -34,39 +35,58 @@ const PubsPlaceIdRoute = PubsPlaceIdRouteImport.update({
   path: '/pubs/$placeId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PubsPlaceIdRateRoute = PubsPlaceIdRateRouteImport.update({
+  id: '/rate',
+  path: '/rate',
+  getParentRoute: () => PubsPlaceIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/pubs/$placeId': typeof PubsPlaceIdRoute
+  '/pubs/$placeId': typeof PubsPlaceIdRouteWithChildren
+  '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/pubs/$placeId': typeof PubsPlaceIdRoute
+  '/pubs/$placeId': typeof PubsPlaceIdRouteWithChildren
+  '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/pubs/$placeId': typeof PubsPlaceIdRoute
+  '/pubs/$placeId': typeof PubsPlaceIdRouteWithChildren
+  '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/sitemap.xml' | '/pubs/$placeId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/pubs/$placeId'
+    | '/pubs/$placeId/rate'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/sitemap.xml' | '/pubs/$placeId'
-  id: '__root__' | '/' | '/auth' | '/sitemap.xml' | '/pubs/$placeId'
+  to: '/' | '/auth' | '/sitemap.xml' | '/pubs/$placeId' | '/pubs/$placeId/rate'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/sitemap.xml'
+    | '/pubs/$placeId'
+    | '/pubs/$placeId/rate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  PubsPlaceIdRoute: typeof PubsPlaceIdRoute
+  PubsPlaceIdRoute: typeof PubsPlaceIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +119,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PubsPlaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pubs/$placeId/rate': {
+      id: '/pubs/$placeId/rate'
+      path: '/rate'
+      fullPath: '/pubs/$placeId/rate'
+      preLoaderRoute: typeof PubsPlaceIdRateRouteImport
+      parentRoute: typeof PubsPlaceIdRoute
+    }
   }
 }
+
+interface PubsPlaceIdRouteChildren {
+  PubsPlaceIdRateRoute: typeof PubsPlaceIdRateRoute
+}
+
+const PubsPlaceIdRouteChildren: PubsPlaceIdRouteChildren = {
+  PubsPlaceIdRateRoute: PubsPlaceIdRateRoute,
+}
+
+const PubsPlaceIdRouteWithChildren = PubsPlaceIdRoute._addFileChildren(
+  PubsPlaceIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  PubsPlaceIdRoute: PubsPlaceIdRoute,
+  PubsPlaceIdRoute: PubsPlaceIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
