@@ -11,6 +11,13 @@ const LONDON = { lat: 51.5074, lng: -0.1278 };
 
 type RatedPub = NearbyPub & { avg: number | null; count: number };
 
+// Persist the map view + loaded pins across navigation, so returning from a
+// pub detail page keeps the same position instead of resetting to London.
+// Module-level state survives client-side route changes within the SPA.
+let savedCenter: { lat: number; lng: number } | null = null;
+let savedZoom: number | null = null;
+let savedPubs: RatedPub[] | null = null;
+
 export function PubMap() {
   const mapDiv = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -26,15 +33,28 @@ export function PubMap() {
       .then((google) => {
         if (cancelled || !mapDiv.current) return;
         mapRef.current = new google.maps.Map(mapDiv.current, {
-          center: LONDON,
-          zoom: 14,
+          center: savedCenter ?? LONDON,
+          zoom: savedZoom ?? 14,
           disableDefaultUI: true,
           zoomControl: true,
           styles: warmMapStyle,
           clickableIcons: false,
         });
+        // Remember where the user leaves the map so we can restore it on return.
+        mapRef.current.addListener("idle", () => {
+          const c = mapRef.current?.getCenter();
+          if (c) {
+            savedCenter = { lat: c.lat(), lng: c.lng() };
+            savedZoom = mapRef.current.getZoom() ?? null;
+          }
+        });
         setReady(true);
-        runSearch();
+        // Reuse the previously loaded pins if we have them; otherwise search.
+        if (savedPubs && savedPubs.length) {
+          renderMarkers(savedPubs);
+        } else {
+          runSearch();
+        }
       })
       .catch((e) => console.error(e));
     return () => {
@@ -79,6 +99,7 @@ export function PubMap() {
           count: s?.count ?? 0,
         };
       });
+      savedPubs = rated;
       renderMarkers(rated);
     } catch (e) {
       console.error(e);
