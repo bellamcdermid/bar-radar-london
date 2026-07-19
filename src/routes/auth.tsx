@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,12 +25,29 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/" });
     });
   }, [navigate]);
+
+  async function signInWith(provider: "google" | "apple") {
+    setOauthLoading(provider);
+    try {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) throw new Error(result.error.message ?? "Sign-in failed");
+      if (result.redirected) return;
+      navigate({ to: "/" });
+    } catch (err: any) {
+      toast.error(err.message ?? "Something went wrong");
+    } finally {
+      setOauthLoading(null);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +105,31 @@ function AuthPage() {
             {loading ? "Just a moment…" : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
         </form>
+        <div className="mt-5 flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+        <div className="mt-4 space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => signInWith("google")}
+            disabled={oauthLoading !== null}
+            className="w-full h-11 rounded-xl"
+          >
+            {oauthLoading === "google" ? "Redirecting…" : "Continue with Google"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => signInWith("apple")}
+            disabled={oauthLoading !== null}
+            className="w-full h-11 rounded-xl"
+          >
+            {oauthLoading === "apple" ? "Redirecting…" : "Continue with Apple"}
+          </Button>
+        </div>
         <button
           type="button"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
