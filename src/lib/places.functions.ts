@@ -10,6 +10,40 @@ export type NearbyPub = {
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
+const EXCLUDE_NAME_PATTERNS = [
+  /hotel/i,
+  /hostel/i,
+  /inn\b/i,
+  /lodge/i,
+  /resort/i,
+  /members'? club/i,
+  /private club/i,
+  /soho house/i,
+  /annabel'?s/i,
+  /5 hertford/i,
+  /mark'?s club/i,
+  /george club/i,
+  /oswald'?s/i,
+  /loulou'?s/i,
+  /home house/i,
+  /the arts club/i,
+  /the ned/i,
+  /the conduit/i,
+  /the h club/i,
+  /the curtain/i,
+  /the century club/i,
+  /the hospital club/i,
+  /groucho club/i,
+  /blacks club/i,
+  /devonshire club/i,
+  /pall mall/i,
+];
+
+function isExcluded(name: string, address: string): boolean {
+  const hay = `${name} ${address}`;
+  return EXCLUDE_NAME_PATTERNS.some((r) => r.test(hay));
+}
+
 export const searchNearbyPubs = createServerFn({ method: "POST" })
   .inputValidator(
     (data: { lat: number; lng: number; radius?: number; query?: string }) => {
@@ -47,7 +81,7 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         body: JSON.stringify({
           textQuery: `${data.query} pub bar London`,
           includedType: "bar",
-          excludedTypes: ["restaurant", "hotel", "lodging", "private_members_club"],
+          excludedTypes: ["restaurant", "hotel", "lodging"],
           maxResultCount: 20,
           locationBias: {
             circle: {
@@ -63,7 +97,7 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         headers,
         body: JSON.stringify({
           includedTypes: ["bar", "pub", "night_club"],
-          excludedTypes: ["restaurant", "hotel", "lodging", "private_members_club"],
+          excludedTypes: ["restaurant", "hotel", "lodging"],
           maxResultCount: 20,
           locationRestriction: {
             circle: {
@@ -98,7 +132,8 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         address: p.formattedAddress ?? "",
         lat: p.location!.latitude,
         lng: p.location!.longitude,
-      }));
+      }))
+      .filter((p) => !isExcluded(p.name, p.address));
   });
 
 export const fetchPlaceDetails = createServerFn({ method: "POST" })
