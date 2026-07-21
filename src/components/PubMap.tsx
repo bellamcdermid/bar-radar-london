@@ -13,10 +13,36 @@ type RatedPub = NearbyPub & { avg: number | null; count: number };
 
 // Persist the map view + loaded pins across navigation, so returning from a
 // pub detail page keeps the same position instead of resetting to London.
-// Module-level state survives client-side route changes within the SPA.
-let savedCenter: { lat: number; lng: number } | null = null;
-let savedZoom: number | null = null;
-let savedPubs: RatedPub[] | null = null;
+// sessionStorage (not module state) so it also survives full page loads —
+// SSR navigations and refreshes remount the whole app, not just this component.
+const VIEW_KEY = "honp_map_view_v1";
+const PUBS_KEY = "honp_map_pubs_v1";
+
+type SavedView = { lat: number; lng: number; zoom: number };
+
+function loadSaved<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function save(key: string, value: unknown) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+}
+
+function saveView(map: any) {
+  const c = map?.getCenter();
+  if (!c) return;
+  save(VIEW_KEY, { lat: c.lat(), lng: c.lng(), zoom: map.getZoom() ?? 14 });
+}
 
 export function PubMap() {
   const mapDiv = useRef<HTMLDivElement>(null);
@@ -32,24 +58,20 @@ export function PubMap() {
     loadGoogleMaps()
       .then((google) => {
         if (cancelled || !mapDiv.current) return;
+        const savedView = loadSaved<SavedView>(VIEW_KEY);
         mapRef.current = new google.maps.Map(mapDiv.current, {
-          center: savedCenter ?? LONDON,
-          zoom: savedZoom ?? 14,
+          center: savedView ? { lat: savedView.lat, lng: savedView.lng } : LONDON,
+          zoom: savedView?.zoom ?? 14,
           disableDefaultUI: true,
           zoomControl: true,
           styles: warmMapStyle,
           clickableIcons: false,
         });
         // Remember where the user leaves the map so we can restore it on return.
-        mapRef.current.addListener("idle", () => {
-          const c = mapRef.current?.getCenter();
-          if (c) {
-            savedCenter = { lat: c.lat(), lng: c.lng() };
-            savedZoom = mapRef.current.getZoom() ?? null;
-          }
-        });
+        mapRef.current.addListener("idle", () => saveView(mapRef.current));
         setReady(true);
         // Reuse the previously loaded pins if we have them; otherwise search.
+        const savedPubs = loadSaved<RatedPub[]>(PUBS_KEY);
         if (savedPubs && savedPubs.length) {
           renderMarkers(savedPubs);
         } else {
@@ -99,7 +121,7 @@ export function PubMap() {
           count: s?.count ?? 0,
         };
       });
-      savedPubs = rated;
+      save(PUBS_KEY, rated);
       renderMarkers(rated);
     } catch (e) {
       console.error(e);
@@ -120,6 +142,7 @@ export function PubMap() {
         icon: pinIcon(p.avg),
       });
       marker.addListener("click", () => {
+        saveView(mapRef.current);
         navigate({ to: "/pubs/$placeId", params: { placeId: p.place_id } });
       });
       markersRef.current.push(marker);
