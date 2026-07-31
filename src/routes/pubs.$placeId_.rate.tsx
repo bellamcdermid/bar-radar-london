@@ -54,7 +54,7 @@ export const Route = createFileRoute("/pubs/$placeId_/rate")({
       <div>
         <h1 className="font-display text-2xl mb-2">Something went wrong</h1>
         <p className="text-muted-foreground">{error.message}</p>
-        <Button asChild className="mt-4"><Link to="/">Back to map</Link></Button>
+        <Button asChild className="mt-4"><Link to="/map">Back to map</Link></Button>
       </div>
     </div>
   ),
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/pubs/$placeId_/rate")({
     <div className="min-h-screen flex items-center justify-center p-6 text-center">
       <div>
         <h1 className="font-display text-2xl mb-2">Pub not found</h1>
-        <Button asChild className="mt-4"><Link to="/">Back to map</Link></Button>
+        <Button asChild className="mt-4"><Link to="/map">Back to map</Link></Button>
       </div>
     </div>
   ),

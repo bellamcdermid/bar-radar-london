@@ -28,6 +28,9 @@ export function SiteHeader() {
           </span>
         </Link>
         <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-foreground hover:text-[var(--burgundy)]">
+            <Link to="/map">Explore map</Link>
+          </Button>
           {email ? (
             <>
               <span className="hidden sm:inline text-sm text-muted-foreground">{email}</span>

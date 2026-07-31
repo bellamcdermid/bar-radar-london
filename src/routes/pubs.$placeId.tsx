@@ -71,7 +71,7 @@ export const Route = createFileRoute("/pubs/$placeId")({
       <div>
         <h1 className="font-display text-2xl mb-2">Something went wrong</h1>
         <p className="text-muted-foreground">{error.message}</p>
-        <Button asChild className="mt-4"><Link to="/">Back to map</Link></Button>
+        <Button asChild className="mt-4"><Link to="/map">Back to map</Link></Button>
       </div>
     </div>
   ),
@@ -79,7 +79,7 @@ export const Route = createFileRoute("/pubs/$placeId")({
     <div className="min-h-screen flex items-center justify-center p-6 text-center">
       <div>
         <h1 className="font-display text-2xl mb-2">Pub not found</h1>
-        <Button asChild className="mt-4"><Link to="/">Back to map</Link></Button>
+        <Button asChild className="mt-4"><Link to="/map">Back to map</Link></Button>
       </div>
     </div>
   ),
@@ -169,7 +169,7 @@ function PubDetail() {
       <Toaster />
       <SiteHeader />
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <Link to="/map" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="h-4 w-4" /> Back to map
         </Link>
 
@@ -499,7 +499,7 @@ function AccessGate({ pub, signedIn }: { pub: Pub; signedIn: boolean }) {
               </Button>
             )}
             <Button asChild variant="outline" className="rounded-full px-6 h-11 border-[var(--burgundy)]/30 text-[var(--burgundy)]">
-              <Link to="/">Back to map</Link>
+              <Link to="/map">Back to map</Link>
             </Button>
           </div>
         </div>
