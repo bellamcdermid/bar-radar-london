@@ -10,38 +10,43 @@ export type NearbyPub = {
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
+// Only match the venue NAME (never the address — "Pall Mall" or "Hotel Street"
+// in an address is not a reason to drop a genuine pub). Patterns are anchored
+// tightly so classic pubs like "The Spaniards Inn" survive.
 const EXCLUDE_NAME_PATTERNS = [
-  /hotel/i,
-  /hostel/i,
-  /inn\b/i,
-  /lodge/i,
-  /resort/i,
-  /members'? club/i,
-  /private club/i,
+  /\bhotel\b/i,
+  /\bhostel\b/i,
+  /\bresort\b/i,
+  /members'? club\b/i,
+  /\bprivate club\b/i,
   /soho house/i,
   /annabel'?s/i,
   /5 hertford/i,
   /mark'?s club/i,
-  /george club/i,
   /oswald'?s/i,
   /loulou'?s/i,
   /home house/i,
   /the arts club/i,
-  /the ned/i,
+  /^the ned$/i,
   /the conduit/i,
-  /the h club/i,
-  /the curtain/i,
-  /the century club/i,
-  /the hospital club/i,
-  /groucho club/i,
+  /groucho/i,
   /blacks club/i,
   /devonshire club/i,
-  /pall mall/i,
 ];
 
-function isExcluded(name: string, address: string): boolean {
-  const hay = `${name} ${address}`;
-  return EXCLUDE_NAME_PATTERNS.some((r) => r.test(hay));
+// Place types that mean "this is lodging, not a bar".
+const LODGING_TYPES = new Set(["hotel", "lodging", "motel", "resort_hotel", "extended_stay_hotel", "bed_and_breakfast", "guest_house", "inn", "hostel"]);
+// A venue is only kept if it actually is a drinking venue.
+const DRINK_TYPES = new Set(["bar", "pub", "wine_bar", "night_club", "bar_and_grill"]);
+
+function isExcluded(name: string, types: string[], primaryType?: string): boolean {
+  if (EXCLUDE_NAME_PATTERNS.some((r) => r.test(name))) return true;
+  if (primaryType && LODGING_TYPES.has(primaryType)) return true;
+  // Drop lodging unless it also registers as a drinking venue (pub-with-rooms).
+  const hasLodging = types.some((t) => LODGING_TYPES.has(t));
+  const hasDrink = types.some((t) => DRINK_TYPES.has(t));
+  if (hasLodging && !hasDrink) return true;
+  return false;
 }
 
 export const searchNearbyPubs = createServerFn({ method: "POST" })
@@ -70,7 +75,7 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
       "X-Connection-Api-Key": connectionKey,
       "Content-Type": "application/json",
       "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.location",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.types,places.primaryType",
     };
 
     let res: Response;
@@ -80,8 +85,6 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         headers,
         body: JSON.stringify({
           textQuery: `${data.query} pub bar London`,
-          includedType: "bar",
-          excludedTypes: ["restaurant", "hotel", "lodging"],
           maxResultCount: 20,
           locationBias: {
             circle: {
@@ -96,8 +99,9 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         method: "POST",
         headers,
         body: JSON.stringify({
-          includedTypes: ["bar", "pub", "night_club"],
-          excludedTypes: ["restaurant", "hotel", "lodging"],
+          // No excludedTypes: many real pubs are also typed "restaurant",
+          // and excluding a type removes the whole place from results.
+          includedTypes: ["bar", "pub", "wine_bar", "night_club", "bar_and_grill"],
           maxResultCount: 20,
           locationRestriction: {
             circle: {
@@ -121,19 +125,21 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         displayName?: { text?: string };
         formattedAddress?: string;
         location?: { latitude: number; longitude: number };
+        types?: string[];
+        primaryType?: string;
       }>;
     };
 
     return (json.places ?? [])
       .filter((p) => p.id && p.location)
+      .filter((p) => !isExcluded(p.displayName?.text ?? "", p.types ?? [], p.primaryType))
       .map((p) => ({
         place_id: p.id,
         name: p.displayName?.text ?? "Unnamed",
         address: p.formattedAddress ?? "",
         lat: p.location!.latitude,
         lng: p.location!.longitude,
-      }))
-      .filter((p) => !isExcluded(p.name, p.address));
+      }));
   });
 
 export const fetchPlaceDetails = createServerFn({ method: "POST" })
