@@ -78,60 +78,73 @@ export const searchNearbyPubs = createServerFn({ method: "POST" })
         "places.id,places.displayName,places.formattedAddress,places.location,places.types,places.primaryType",
     };
 
-    let res: Response;
-    if (data.query) {
-      res = await fetch(`${GATEWAY}/places/v1/places:searchText`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          textQuery: `${data.query} pub bar London`,
-          maxResultCount: 20,
-          locationBias: {
-            circle: {
-              center: { latitude: data.lat, longitude: data.lng },
-              radius: data.radius,
-            },
-          },
-        }),
-      });
-    } else {
-      res = await fetch(`${GATEWAY}/places/v1/places:searchNearby`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          // No excludedTypes: many real pubs are also typed "restaurant",
-          // and excluding a type removes the whole place from results.
-          includedTypes: ["bar", "pub", "wine_bar", "night_club", "bar_and_grill"],
-          maxResultCount: 20,
-          locationRestriction: {
-            circle: {
-              center: { latitude: data.lat, longitude: data.lng },
-              radius: data.radius,
-            },
-          },
-        }),
-      });
-    }
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("Places API error", res.status, body);
-      throw new Error(`Places search failed: ${res.status}`);
-    }
-
-    const json = (await res.json()) as {
-      places?: Array<{
-        id: string;
-        displayName?: { text?: string };
-        formattedAddress?: string;
-        location?: { latitude: number; longitude: number };
-        types?: string[];
-        primaryType?: string;
-      }>;
+    type RawPlace = {
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      location?: { latitude: number; longitude: number };
+      types?: string[];
+      primaryType?: string;
     };
 
-    return (json.places ?? [])
+    async function call(path: string, body: unknown): Promise<RawPlace[]> {
+      const res = await fetch(`${GATEWAY}${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        console.error("Places API error", path, res.status, await res.text());
+        return [];
+      }
+      const json = (await res.json()) as { places?: RawPlace[] };
+      return json.places ?? [];
+    }
+
+    let raw: RawPlace[];
+    if (data.query) {
+      raw = await call("/places/v1/places:searchText", {
+        textQuery: `${data.query} pub bar London`,
+        maxResultCount: 20,
+        locationBias: {
+          circle: {
+            center: { latitude: data.lat, longitude: data.lng },
+            radius: data.radius,
+          },
+        },
+      });
+    } else {
+      // Nearby search caps at 20 results PER request, so a single call misses
+      // most venues in dense areas. Run one request per type group (ranked by
+      // distance) and merge, which gives far better coverage.
+      const groups = [
+        ["pub"],
+        ["bar"],
+        ["wine_bar", "bar_and_grill"],
+        ["night_club"],
+      ];
+      const results = await Promise.all(
+        groups.map((includedTypes) =>
+          call("/places/v1/places:searchNearby", {
+            includedTypes,
+            maxResultCount: 20,
+            rankPreference: "DISTANCE",
+            locationRestriction: {
+              circle: {
+                center: { latitude: data.lat, longitude: data.lng },
+                radius: data.radius,
+              },
+            },
+          }),
+        ),
+      );
+      raw = results.flat();
+    }
+
+    const seen = new Set<string>();
+    return raw
       .filter((p) => p.id && p.location)
+      .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
       .filter((p) => !isExcluded(p.displayName?.text ?? "", p.types ?? [], p.primaryType))
       .map((p) => ({
         place_id: p.id,
