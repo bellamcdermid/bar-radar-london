@@ -29,7 +29,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/" });
+      if (data.user) navigate({ to: "/map" });
     });
   }, [navigate]);
 
@@ -41,7 +41,7 @@ function AuthPage() {
       });
       if (result.error) throw new Error(result.error.message ?? "Sign-in failed");
       if (result.redirected) return;
-      navigate({ to: "/" });
+      navigate({ to: "/map" });
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
     } finally {
@@ -65,7 +65,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Welcome back.");
-        navigate({ to: "/" });
+        navigate({ to: "/map" });
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
