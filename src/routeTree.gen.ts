@@ -61,7 +61,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/pubs/$placeId': typeof PubsPlaceIdRoute
-  '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
+  '/pubs/$placeId_/rate': typeof PubsPlaceIdRateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -79,7 +79,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sitemap.xml'
     | '/pubs/$placeId'
-    | '/pubs/$placeId/rate'
+    | '/pubs/$placeId_/rate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -120,7 +120,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PubsPlaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pubs/$placeId/rate': {
+    '/pubs/$placeId_/rate': {
       id: '/pubs/$placeId_/rate'
       path: '/pubs/$placeId/rate'
       fullPath: '/pubs/$placeId/rate'
@@ -140,3 +140,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
