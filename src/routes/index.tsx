@@ -45,7 +45,7 @@ function LandingPage() {
               Find the hottest crowd in London tonight.
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-2xl mx-auto leading-relaxed">
-              Honest, anonymous ratings of pubs and cocktail bars — scored by how attractive the men are, broken down by day of the week.
+              Honest, anonymous ratings of pubs and bars based on how attractive the men usually are.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
@@ -69,7 +69,7 @@ function LandingPage() {
               )}
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Browse {FREE_PREVIEW_LIMIT} pubs free. Unlock unlimited views with one rating.
+              Browse {FREE_PREVIEW_LIMIT} pubs then unlock more by rating a pub or bar that you've been to.
             </p>
           </div>
         </section>
@@ -89,12 +89,12 @@ function LandingPage() {
               <StepCard
                 icon={<Lock className="h-6 w-6" />}
                 title="Unlock"
-                description="Sign in to see scores and comments, or post one rating to browse forever."
+                description="Sign in to see scores and comments, or post a rating to browse more."
               />
               <StepCard
                 icon={<CalendarDays className="h-6 w-6" />}
                 title="Filter by day"
-                description="Ratings are split by day of the week — because Thursdays hit different."
+                description="Ratings are split by day of the week because we know Thursdays hit different."
               />
               <StepCard
                 icon={<MessageSquare className="h-6 w-6" />}
@@ -112,7 +112,7 @@ function LandingPage() {
               Ready to find tonight's crowd?
             </h2>
             <p className="mt-4 text-lg text-[var(--burgundy)]/80">
-              Join the map, rate the talent, and never waste a night out again.
+              Join the map, rate the talent, and find someone off the apps.
             </p>
             <Button
               asChild
@@ -134,7 +134,7 @@ function LandingPage() {
             </span>
             <span className="font-display font-semibold text-foreground">Hot Or Not Pubs</span>
           </div>
-          <p>London's flirtiest map.</p>
+          <p>London's hottest map.</p>
         </div>
       </footer>
     </div>
