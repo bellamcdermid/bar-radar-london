@@ -9,9 +9,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Hot Or Not Pubs — London's flirtiest map" },
-      { name: "description", content: "A crowdsourced map of London pubs and bars rated by how attractive the men are — by day of the week." },
+      {
+        name: "description",
+        content:
+          "A crowdsourced map of London pubs and bars rated by how attractive the men are — by day of the week.",
+      },
       { property: "og:title", content: "Hot Or Not Pubs — London's flirtiest map" },
-      { property: "og:description", content: "Find London's flirtiest pubs. Honest ratings, by night." },
+      {
+        property: "og:description",
+        content: "Find London's flirtiest pubs. Honest ratings, by night.",
+      },
     ],
   }),
   component: LandingPage,
@@ -45,7 +52,8 @@ function LandingPage() {
               Find the hottest crowd in London tonight.
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-2xl mx-auto leading-relaxed">
-              Honest, anonymous ratings of pubs and bars based on how attractive the men usually are.
+              Honest, anonymous ratings of pubs and bars based on how attractive the men usually
+              are.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
@@ -69,7 +77,8 @@ function LandingPage() {
               )}
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Browse {FREE_PREVIEW_LIMIT} pubs then unlock more by rating a pub or bar that you've been to.
+              Browse {FREE_PREVIEW_LIMIT} pubs then unlock more by rating a pub or bar that you've
+              been to.
             </p>
           </div>
         </section>
@@ -138,6 +147,9 @@ function LandingPage() {
             <Link to="/terms" className="hover:text-foreground">
               Terms &amp; Conditions
             </Link>
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
             <span>London's hottest map.</span>
           </div>
         </div>
@@ -146,7 +158,15 @@ function LandingPage() {
   );
 }
 
-function StepCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function StepCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="bg-card rounded-3xl border border-border/60 p-6 shadow-[var(--shadow-soft)] text-center">
       <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--burgundy)] text-cream mb-4">

@@ -13,7 +13,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Hot Or Not Pubs" },
-      { name: "description", content: "Sign in to rate London pubs by how attractive the men are." },
+      {
+        name: "description",
+        content: "Sign in to rate London pubs by how attractive the men are.",
+      },
     ],
   }),
   component: AuthPage,
@@ -82,7 +85,9 @@ function AuthPage() {
           <span className="h-10 w-10 rounded-full bg-[var(--gradient-warm)] flex items-center justify-center">
             <Flame className="h-5 w-5 text-cream" strokeWidth={2.5} />
           </span>
-          <span className="font-display text-2xl font-semibold text-[var(--burgundy)]">Hot Or Not Pubs</span>
+          <span className="font-display text-2xl font-semibold text-[var(--burgundy)]">
+            Hot Or Not Pubs
+          </span>
         </Link>
         <h1 className="font-display text-3xl font-semibold text-foreground">
           {mode === "signin" ? "Welcome back" : "Join the map"}
@@ -95,13 +100,34 @@ function AuthPage() {
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} className="mt-1.5 h-11 rounded-xl" />
+            <Input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={255}
+              className="mt-1.5 h-11 rounded-xl"
+            />
           </div>
           <div>
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} maxLength={72} className="mt-1.5 h-11 rounded-xl" />
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              maxLength={72}
+              className="mt-1.5 h-11 rounded-xl"
+            />
           </div>
-          <Button type="submit" disabled={loading} className="w-full h-11 rounded-xl bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-primary-foreground font-medium">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full h-11 rounded-xl bg-[var(--burgundy)] hover:bg-[var(--burgundy)]/90 text-primary-foreground font-medium"
+          >
             {loading ? "Just a moment…" : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
         </form>
@@ -141,6 +167,10 @@ function AuthPage() {
           You must be 18 or over. By continuing you agree to our{" "}
           <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
             Terms &amp; Conditions
+          </Link>{" "}
+          and acknowledge our{" "}
+          <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
+            Privacy Notice
           </Link>
           .
         </p>

@@ -299,21 +299,21 @@ function TermsPage() {
 
           <Section n="13" title="Your personal data">
             <P>
-              To run the Service we process a small amount of personal data: your email address and
-              account identifier from your sign-in provider; the ratings, comments, visit dates and
-              optional display names you post; and basic technical information such as logs. Your
-              browser also stores locally which venue pages you have viewed, to apply the free
-              browsing limit.
+              How we collect and use personal data — what we hold, the legal bases we rely on, who
+              we share it with, how long we keep it, and your rights under UK GDPR — is set out in
+              our{" "}
+              <Link
+                to="/privacy"
+                className="text-[var(--burgundy)] underline underline-offset-4 hover:opacity-80"
+              >
+                Privacy Notice
+              </Link>
+              , which forms part of these terms.
             </P>
             <P>
               Bear in mind that ratings, comments and display names are visible to other signed-in
               users. Do not put anything in them that you would not want seen — including your own
               contact details.
-            </P>
-            <P>
-              We handle personal data in line with UK data protection law. You can ask us for a copy
-              of your data, ask us to correct it, or ask us to delete it and close your account by
-              emailing {CONTACT_EMAIL}.
             </P>
           </Section>
 
