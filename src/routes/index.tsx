@@ -134,7 +134,12 @@ function LandingPage() {
             </span>
             <span className="font-display font-semibold text-foreground">Hot Or Not Pubs</span>
           </div>
-          <p>London's hottest map.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="hover:text-foreground">
+              Terms &amp; Conditions
+            </Link>
+            <span>London's hottest map.</span>
+          </div>
         </div>
       </footer>
     </div>

@@ -137,6 +137,13 @@ function AuthPage() {
         >
           {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          You must be 18 or over. By continuing you agree to our{" "}
+          <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
+            Terms &amp; Conditions
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

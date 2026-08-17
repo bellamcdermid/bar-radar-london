@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -16,6 +17,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PubsPlaceIdRouteImport } from './routes/pubs.$placeId'
 import { Route as PubsPlaceIdRateRouteImport } from './routes/pubs.$placeId_.rate'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/map': typeof MapRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/pubs/$placeId': typeof PubsPlaceIdRoute
   '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/map': typeof MapRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/pubs/$placeId': typeof PubsPlaceIdRoute
   '/pubs/$placeId/rate': typeof PubsPlaceIdRateRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/map': typeof MapRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/pubs/$placeId': typeof PubsPlaceIdRoute
   '/pubs/$placeId_/rate': typeof PubsPlaceIdRateRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/map'
     | '/sitemap.xml'
+    | '/terms'
     | '/pubs/$placeId'
     | '/pubs/$placeId/rate'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/map'
     | '/sitemap.xml'
+    | '/terms'
     | '/pubs/$placeId'
     | '/pubs/$placeId/rate'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/map'
     | '/sitemap.xml'
+    | '/terms'
     | '/pubs/$placeId'
     | '/pubs/$placeId_/rate'
   fileRoutesById: FileRoutesById
@@ -104,12 +116,20 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   MapRoute: typeof MapRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
   PubsPlaceIdRoute: typeof PubsPlaceIdRoute
   PubsPlaceIdRateRoute: typeof PubsPlaceIdRateRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   MapRoute: MapRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   PubsPlaceIdRoute: PubsPlaceIdRoute,
   PubsPlaceIdRateRoute: PubsPlaceIdRateRoute,
 }

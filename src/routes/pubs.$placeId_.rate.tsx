@@ -243,6 +243,15 @@ function RatePage() {
               >
                 {busy ? "Posting…" : "Post rating"}
               </Button>
+
+              <p className="mt-3 text-xs text-muted-foreground">
+                Rate the crowd, never an individual — no names, photos or descriptions that identify
+                someone. By posting you agree to our{" "}
+                <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
+                  Terms &amp; Conditions
+                </Link>
+                .
+              </p>
             </form>
           )}
         </div>
