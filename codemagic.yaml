@@ -40,8 +40,9 @@ workflows:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
 
-    integrations:
-      app_store_connect: codemagic
+    # No `triggering:` block: builds are started manually from the Codemagic
+    # UI. Add one here if you want pushes to build automatically — note the
+    # free tier is 500 macOS minutes/month.
 
     scripts:
       - name: Install dependencies
@@ -54,13 +55,6 @@ workflows:
 
       - name: Copy the bundle into the iOS project
         script: npx cap sync ios
-
-      - name: Set the build number
-        # Must be unique and increasing per upload or App Store Connect rejects
-        # it with ITMS-90062. BUILD_NUMBER is Codemagic's per-project counter.
-        script: |
-          cd ios/App
-          agvtool new-version -all "$BUILD_NUMBER"
 
       - name: Create signing certificate and provisioning profile
         script: |
@@ -78,10 +72,20 @@ workflows:
         script: xcode-project use-profiles
 
       - name: Build the IPA
+        # CFBundleVersion must be unique and increasing per upload or App Store
+        # Connect rejects it (ITMS-90062). Info.plist indirects it through
+        # $(CURRENT_PROJECT_VERSION), so it is set here at archive time.
+        #
+        # Deliberately NOT `agvtool new-version`: agvtool needs
+        # VERSIONING_SYSTEM = "apple-generic" at project level, which this
+        # project does not set, so it can exit 0 having changed nothing. That
+        # is invisible on the first build and fatal on the second.
         script: |
+          echo "Building with CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -89,8 +93,18 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
-        # Uploads the build. Internal testers can install as soon as processing
-        # finishes — no Beta App Review is involved. Flipping this to true
-        # submits for external testing, which DOES trigger Beta App Review.
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+
+        # Uploads the build to App Store Connect. No Beta App Review is
+        # involved on the internal track.
+        #
+        # IMPORTANT: this uploads only — it does not hand the build to a group.
+        # In App Store Connect, open your internal testing group and tick
+        # "Enable automatic distribution", or testers will see nothing in
+        # TestFlight even though the build is sitting there and CI went green.
+        #
+        # Setting this to true submits for EXTERNAL testing, which does trigger
+        # Beta App Review.
         submit_to_testflight: false
