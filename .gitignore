@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# iOS signing secrets — never commit. The repo is public.
+*.p8
+*.p12
+*.mobileprovision
+*.certSigningRequest

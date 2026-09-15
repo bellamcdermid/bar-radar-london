@@ -1,0 +1,96 @@
+# Builds the Capacitor iOS app on a hosted Mac and uploads it to TestFlight.
+#
+# Nobody needs a Mac or Xcode locally: `app-store-connect fetch-signing-files
+# --create` issues the distribution certificate and provisioning profile through
+# the App Store Connect API, from CERTIFICATE_PRIVATE_KEY plus the API key.
+#
+# Required environment groups (create these in the Codemagic UI, all secure):
+#
+#   appstore_credentials
+#     APP_STORE_CONNECT_ISSUER_ID       Issuer ID from Users and Access > Integrations
+#     APP_STORE_CONNECT_KEY_IDENTIFIER  the Key ID
+#     APP_STORE_CONNECT_PRIVATE_KEY     full contents of AuthKey_<KeyID>.p8
+#     CERTIFICATE_PRIVATE_KEY           an RSA key you generate once:
+#                                         openssl genrsa -out cert_key.pem 2048
+#
+#   app_env  (baked into the web bundle at build time — without these the app
+#            throws on boot, see src/integrations/supabase/client.ts)
+#     VITE_SUPABASE_URL
+#     VITE_SUPABASE_PUBLISHABLE_KEY
+#     VITE_SUPABASE_PROJECT_ID
+#     VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY
+#     VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID
+
+workflows:
+  ios-testflight:
+    name: iOS TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      # Apple has required Xcode 26 / the iOS 26 SDK for App Store Connect
+      # uploads since 28 April 2026. This applies to TestFlight-only builds too.
+      xcode: 26
+      node: 22
+      groups:
+        - appstore_credentials
+        - app_env
+      vars:
+        BUNDLE_ID: "uk.hotornotpubs"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+
+    integrations:
+      app_store_connect: codemagic
+
+    scripts:
+      - name: Install dependencies
+        script: npm install
+
+      - name: Build the static web bundle
+        # SPA mode, not the Cloudflare Worker build. Emits dist/client with an
+        # index.html at the root, which Capacitor's iOS router needs for deep links.
+        script: npm run build:native
+
+      - name: Copy the bundle into the iOS project
+        script: npx cap sync ios
+
+      - name: Set the build number
+        # Must be unique and increasing per upload or App Store Connect rejects
+        # it with ITMS-90062. BUILD_NUMBER is Codemagic's per-project counter.
+        script: |
+          cd ios/App
+          agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Create signing certificate and provisioning profile
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key="@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+
+      - name: Load the certificate into the build keychain
+        script: |
+          keychain initialize
+          keychain add-certificates
+
+      - name: Point the Xcode project at the fetched profile
+        script: xcode-project use-profiles
+
+      - name: Build the IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Uploads the build. Internal testers can install as soon as processing
+        # finishes — no Beta App Review is involved. Flipping this to true
+        # submits for external testing, which DOES trigger Beta App Review.
+        submit_to_testflight: false
