@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Flame } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
+import { Capacitor } from "@capacitor/core";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -26,6 +27,12 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
+
+  // The OAuth broker redirects back to window.location.origin, which inside the
+  // native shell is capacitor://localhost — a custom scheme no web OAuth client
+  // will accept. Until the flow goes through a native auth session, email and
+  // password is the only sign-in that works on device.
+  const nativeShell = Capacitor.isNativePlatform();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -105,31 +112,35 @@ function AuthPage() {
             {loading ? "Just a moment…" : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
         </form>
-        <div className="mt-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-        <div className="mt-4 space-y-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => signInWith("google")}
-            disabled={oauthLoading !== null}
-            className="w-full h-11 rounded-xl"
-          >
-            {oauthLoading === "google" ? "Redirecting…" : "Continue with Google"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => signInWith("apple")}
-            disabled={oauthLoading !== null}
-            className="w-full h-11 rounded-xl"
-          >
-            {oauthLoading === "apple" ? "Redirecting…" : "Continue with Apple"}
-          </Button>
-        </div>
+        {!nativeShell && (
+          <>
+            <div className="mt-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div className="mt-4 space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => signInWith("google")}
+                disabled={oauthLoading !== null}
+                className="w-full h-11 rounded-xl"
+              >
+                {oauthLoading === "google" ? "Redirecting…" : "Continue with Google"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => signInWith("apple")}
+                disabled={oauthLoading !== null}
+                className="w-full h-11 rounded-xl"
+              >
+                {oauthLoading === "apple" ? "Redirecting…" : "Continue with Apple"}
+              </Button>
+            </div>
+          </>
+        )}
         <button
           type="button"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
