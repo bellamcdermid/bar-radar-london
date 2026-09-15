@@ -17,8 +17,8 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <header className="h-16 border-b border-border/60 bg-card/80 backdrop-blur sticky top-0 z-30">
-      <div className="h-full max-w-7xl mx-auto px-4 flex items-center justify-between">
+    <header className="border-b border-border/60 bg-card/80 backdrop-blur sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
+      <div className="h-16 max-w-7xl mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
           <span className="h-9 w-9 rounded-full bg-[var(--gradient-warm)] flex items-center justify-center shadow-[var(--shadow-soft)]">
             <Flame className="h-4 w-4 text-cream" strokeWidth={2.5} />

@@ -150,7 +150,7 @@ export function PubMap() {
   }
 
   return (
-    <div className="relative h-[calc(100vh-4rem)] w-full">
+    <div className="relative h-[calc(100vh-4rem-env(safe-area-inset-top))] w-full">
       <div ref={mapDiv} className="absolute inset-0 bg-muted" />
       <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
         <Button
